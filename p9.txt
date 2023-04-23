@@ -1,0 +1,98 @@
+Practical 9 
+Configure and Verify a site-to-site IPSec VPN using CLI
+Part 1:-Configure Router 
+(Execute command on all routers)
+1->enable secret enpa55
+2->(Execute command on all routers)
+line console 0
+password conpa55
+login 
+3->(Execute command on all routers)
+ip domain-name ccnasecurity.com
+username admin secret adminpa55
+line vty 0 4
+login local
+crypto key generate rsa
+
+Step 4:Configure OSPF on routers
+R1:
+router ospf 1
+network 192.168.1.0 0.0.0.255 area 0
+network 10.1.1.0 0.0.0.3 area 0
+
+R2:
+router ospf 1
+network 192.168.2.0 0.0.0.255 area 0
+network 10.2.2.0 0.0.0.3 area 0
+network 10.1.1.0 0.0.0.3 area 0
+
+R3:
+router ospf 1
+network 192.168.3.0 0.0.0.255 area 0
+network 10.2.2.0 0.0.0.3 area 0
+
+Step 5:Verify connectivity
+PCA>ping 192.168.3.3
+(Successful)
+PCA>ping 192.168.2.3
+(Successful)
+PCB>ping 192.168.3.3
+(Successful)
+
+Part 2:-Configure IPSec parameters on R1
+1->R1#show version
+2->R1(config)#license boot module c1900 technology-package securityk9
+(yes)
+3->R1#copy run start
+reload
+4->R1#show version
+5->access-list 110 permit ip 192.168.1.0 0.0.0.255 192.168.3.0 0.0.0.255
+6->crypto isakmp policy 10
+encryption aes 256
+authentication pre-share
+group 5
+exit
+crypto isakmp key vpnpa55 address 10.2.2.2
+7->crypto ipsec transform-set VPN-SET esp-aes esp-sha-hmac
+crypto map VPN-MAP 10 ipsec-isakmp
+description VPN connection to R3
+set peer 10.2.2.2
+set transform-set VPN-SET
+match address 110
+exit
+8->int se0/1/0
+crypto map VPN-MAP
+
+PART 3: Configure IPsec Parameters on R3
+1->R3# show version
+2->R3(config)# license boot module c1900 technology-package securityk9
+3->R3#copy run start
+reload
+4->R3#show version 
+5->R3(config)#access-list 110 permit ip 192.168.3.0 0.0.0.255 192.168.1.0 0.0.0.255
+6->R3(config)#crypto isakmp policy 10
+encryption aes 256 
+authentication pre-share 
+group 5 
+exit 
+crypto isakmp key vpnpa55 address 10.1.1.2
+7->R3(config)#crypto ipsec transform-set VPN-SET esp-aes esp-sha-hmac
+crypto map VPN-MAP 10 ipsec-isakmp
+description VPN connection to R1
+set peer 10.1.1.2 
+set transform-set VPN-SET
+match address 110 
+exit
+8->R3(config)#int se0/1/0
+crypto map VPN-MAP
+
+PART 4: Verify IPSec VPN
+1->R1#show crypto ipsec sa
+2->PCC> ping 192.168.1.3
+(Successful)
+3->R1#show crypto ipsec sa
+4->PCB>ping 192.168.1.3
+R1#ping 192.168.3.3
+R3#ping 192.168.1.3
+Verify the tunnel.
+R1# show crypto ipsec sa
