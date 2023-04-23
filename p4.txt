@@ -1,0 +1,236 @@
+Practical 4:
+
+Part A:
+Execute on all routers
+1-> enable secret enpa55
+2-> line console 0
+password conpa55
+login
+3->
+ip domain-name ccnasecurity.com
+username admin secret adminpa55
+line vty 0 4
+login local
+crypto key generate rsa
+4-> only on R2
+int loopback 0
+ip address 192.168.2.1 255.255.255.0
+no shut 
+5-> static routing on routers
+#R1->
+ip route 192.168.3.0 255.255.255.0 10.1.1.2
+ip route 10.2.2.0 255.255.255.252 10.1.1.2
+ip route 192.168.2.0 255.255.255.0 10.1.1.2
+#R2->
+ip route 192.168.1.0 255.255.255.0 10.1.1.1
+ip route 192.168.3.0 255.255.255.0 10.2.2.1
+#R3->
+ip route 192.168.1.0 255.255.255.0 10.2.2.2
+ip route 192.168.2.0 255.255.255.0 10.2.2.2
+ip route 10.1.1.0 255.255.255.252 10.2.2.2
+6->verify
+#pca to pcc &r2->
+PCA> ping 192.168.3.3 
+PCA> ping 192.168.2.1 
+PCA> ssh –l admin 192.168.2.1
+R2>exit
+#pcc to pca &r2->
+PCC> ping 192.168.1.3 
+PCC> ping 192.168.2.1 
+PCC> ssh –l admin 192.168.2.1
+R2>exit
+->
+in PC-A open webbrowser -> 192.168.1.3 ->display webpage 
+
+part 2: secure access to routers
+1->execute on all routers
+access-list 10 permit host 192.168.3.3
+line vty 0 4
+access-class 10 in
+2-> verify exclusive management
+PCC> ssh –l admin 192.168.2.1
+Password:adminpa55
+R2>exit
+PCA> ssh –l admin 192.168.2.1
+--Connection refused by remote host
+
+part 3: create numbered IP ACL 120 on R1
+Disable HTTP and enable HTTPS on server PC-A in Services tab.
+
+1->only on R1
+ access-list 120 permit udp any host 192.168.1.3 eq domain
+access-list 120 permit tcp any host 192.168.1.3 eq smtp
+access-list 120 permit tcp any host 192.168.1.3 eq ftp
+access-list 120 deny tcp any host 192.168.1.3 eq 443
+access-list 120 permit tcp  host 192.168.3.3 host 10.1.1.1 eq 22
+int se0/1/0
+ip access-group 120 in
+
+2->
+Verify that PC-C cannot access PC-A via HTTPS using the web browser.
+PC-C:Desktop->Web Browser->192.168.1.3
+
+part 4: modify  an existing ACL on R1
+1-> PCA> ping 192.168.2.1
+unsuccesfull
+2->on R1
+access-list 120 permit icmp any any echo-reply
+access-list 120 permit icmp any any unreachable
+access-list 120 deny icmp any any 
+access-list 120 permit ip any any
+3->pca successfully ping loopback on R2
+PCA> ping 192.168.2.1
+successfull
+
+part 5: create a numbered IP ACL 110 on R3
+1->on R3
+access-list 110 permit ip 192.168.3.0 0.0.0.255 any
+int int gig0/0
+ip access-group 110 in
+access-list 100 permit tcp 10.0.0.0 0.255.255.255 host 192.168.3.3 eq 22
+access-list 100 deny ip 10.0.0.0 0.255.255.255 any
+access-list 100 deny ip 172.16.0.0 0.15.255.255 any
+access-list 100 deny ip 192.168.0.0 0.0.255.255 any
+access-list 100 deny ip 127.0.0.0 0.255.255.255 any
+access-list 100 deny ip 224.0.0.0 15.255.255.255 any
+access-list 100 permit ip any any
+int se0/1/0
+ip access-group 100 in
+2-> Confirm that the specified traffic entering interface Serial 
+is handled correctly.
+PCC> ping 192.168.1.3 
+unsuccessfull
+PCC> ssh –l admin 192.168.2.1
+R2>exit
+
+Part B:
+For HTTP and HTTPS Block and For ICMP BLOCK
+part1
+1-> on all routers
+enable secret enpa55
+
+2->assign ipv6 address
+R1--
+int gig0/0
+ipv6 address 2001:DB8:1:10::1/64
+ipv6 address FE80::1 link-local
+no shut
+exit
+int gig0/1
+ipv6 address 2001:DB8:1:11::1/64
+ipv6 address FE80::1 link-local
+no shut
+exit
+int se0/1/0
+ipv6 address 2001:DB8:1:1::1/64
+ipv6 address FE80::1 link-local
+no shut
+exit
+
+R2--
+
+int se0/1/1
+ipv6 address 2001:DB8:1:2::2/64
+ipv6 address FE80::2 link-local
+no shut
+exit
+int se0/1/0
+ipv6 address 2001:DB8:1:1::2/64
+ipv6 address FE80::2 link-local
+no shut
+exit
+
+R3--
+
+int gig0/0
+ipv6 address 2001:DB8:1:30::1/64
+ipv6 address FE80::3 link-local
+no shut
+exit
+int se0/1/1
+ipv6 address 2001:DB8:1:2::1/64
+ipv6 address FE80::3 link-local
+no shut
+exit
+
+3->ipv6 static routing
+
+R1--
+
+ipv6 unicast-routing 
+ipv6 route 2001:DB8:1:2::0/64 2001:DB8:1:1::2
+ipv6 route 2001:DB8:1:30::0/64 2001:DB8:1:1::2
+
+R2--
+
+ipv6 unicast-routing 
+ipv6 route 2001:DB8:1:10::0/64 2001:DB8:1:1::1
+ipv6 route 2001:DB8:1:11::0/64 2001:DB8:1:1::1
+ipv6 route 2001:DB8:1:30::0/64 2001:DB8:1:2::1
+
+R3-- 
+
+ipv6 unicast-routing
+ipv6 route 2001:DB8:1:10::0/64 2001:DB8:1:2::2
+ipv6 route 2001:DB8:1:11::0/64 2001:DB8:1:2::2
+ipv6 route 2001:DB8:1:1::0/64 2001:DB8:1:2::2
+
+verify--
+
+PC1> ping 2001:DB8:1:30::30
+
+PC2> ping 2001:DB8:1:30::30
+
+
+part2: Configure & verify IPv6 ACL to Block Http and Https access
+
+on R1->
+
+ipv6 access-list BLOCK_HTTP
+deny tcp any host 2001:DB8:1:30::30 eq www
+deny tcp any host 2001:DB8:1:30::30 eq 443
+permit ipv6 any any
+exit
+int gig0/1
+ipv6 traffic-filter BLOCK_HTTP in
+
+verify->
+Open a web browser to the PC1 to display the web page
+http://2001:DB8:1:30::30
+
+https://2001:DB8:1:30::30
+
+Open a web browser to the PC2 to display the web page.
+http://2001:DB8:1:30::30
+
+https://2001:DB8:1:30::30
+
+PC2> ping 2001:DB8:1:30::30
+
+part3: configure second ipv6 acl to block icmp
+
+on R3->
+1->
+ipv6 access-list BLOCK_ICMP
+deny icmp any any
+permit ipv6 any any
+exit
+int gig0/0
+ipv6 traffic-filter BLOCK_ICMP OUT
+2->
+int gig0/0
+ipv6 traffic-filter BLOCK_ICMP out
+
+
+verify-->
+
+PC2> ping 2001:DB8:1:30::30
+-- unsuccessful
+PC1> ping 2001:DB8:1:30::30
+-- unsuccessful
+
+Open a web browser to the PC1 to display the web page.
+Desktop->Web Browser->http://2001:DB8:1:30::30
+-- successful
+Desktop->Web Browser->https://2001:DB8:1:30::30
+-- successful
