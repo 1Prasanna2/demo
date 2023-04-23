@@ -1,0 +1,56 @@
+Practical 7:
+
+Execute command on all switches and router
+1->enable secret enpa55
+2->line console 0
+password conpa55
+login
+
+3->ip domain-name ccnasecurity.com
+username admin secret adminpa55
+line vty 0 4
+login local
+crypto key generate rsa
+
+4->Determine the current root bridge
+SW#show spanning-tree(Execute in all switches)
+SW1
+show spanning-tree
+
+5->Central as the primary root bridge
+central(config)#spanning-tree vlan 1 root primary
+central#show spanning-tree
+
+6->SW-1 as a secondary root bridge
+SW1(config)#spanning-tree vlan 1 root secondary
+#show spanning-tree
+
+7->Enable PortFast on all access ports 
+Execute on SWA-SWB
+int range fa0/1-4
+spanning-tree portfast
+exit
+int range fa0/1-4
+spanning-tree bpduguard enable
+8->SW1 and SW2
+#show spanning-tree
+conig#int range fa0/23-24
+spanning-tree guard root
+9->SW-A and SW-B
+int range fa0/1-22
+switchport mode access 
+switchport port-security
+switchport port-security maximum 2
+switchport port-security violation shutdown
+switchport port-security mac-address sticky
+10->SW-A and SW-B #
+show port-security interface fa0/1
+11->SW-A and SW-B
+config#int range f0/5-22
+shutdown
+
+C1> ping 10.1.1.11
+
+C1> ping 10.1.1.14
+Commands on SWA-SWB
+#show port-security int fa0/1
