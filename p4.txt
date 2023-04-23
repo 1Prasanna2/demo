@@ -85,7 +85,7 @@ successfull
 part 5: create a numbered IP ACL 110 on R3
 1->on R3
 access-list 110 permit ip 192.168.3.0 0.0.0.255 any
-int int gig0/0
+int gig0/0
 ip access-group 110 in
 access-list 100 permit tcp 10.0.0.0 0.255.255.255 host 192.168.3.3 eq 22
 access-list 100 deny ip 10.0.0.0 0.255.255.255 any
