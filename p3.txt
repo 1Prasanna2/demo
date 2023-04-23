@@ -1,5 +1,6 @@
 Practical 3:
 ACL Part A
+Configure Acl to permit FTP ,HTTP,ICMP
 Part 1: 
 R1:
 1->line vty 0 4
