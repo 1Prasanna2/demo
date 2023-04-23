@@ -1,0 +1,85 @@
+Practical 1:
+part 1:(Configure Router) Execute Command in All Router
+1->line vty 0 4
+password vtypa55
+login
+2->enable secret enpa55
+For R1:
+router ospf 1
+network 192.168.1.0 0.0.0.255 area 0 
+network 10.1.1.0 0.0.0.3 area 0
+For R2:
+router ospf 1
+network 10.1.1.0 0.0.0.3 area 0
+network 10.2.2.0 0.0.0.3 area 0
+For R3:
+router ospf 1
+network 192.168.3.0 0.0.0.255 area 0
+network 10.2.2.0 0.0.0.3 area 0
+Test Connectivity:
+PC-A>ping 192.168.3.5(Successfull)
+PC-B>ping 192.168.3.5(successfull)
+
+Part2-OSPF MD5 Authentication
+Execute Command in all router
+1->router ospf 1
+area 0 authentication message-digest
+For R1:
+int se 0/1/0
+ip ospf message-digest-key 1 md5 md5pa55
+For R2:
+int se 0/1/0
+ip ospf message-digest-key 1 md5 md5pa55
+int se 0/1/1
+ip ospf message-digest-key 1 md5 md5pa55
+For R3:
+int se 0/1/0
+ip ospf message-digest-key 1 md5 md5pa55
+
+R#show ip ospf interface
+Execute Command in all router
+
+Part3-Configure NTP
+PCA---->NTp--->sevice enable
+authentication--->Click enable-->key 1----->password NTPpa55
+1->ntp server 192.168.1.5
+(Execute in all router)
+2->ntp update-calendar 
+(Execute in All Router)
+R#show clock
+(Execute command in all router)
+3->ntp authenticate
+ntp trusted-key 1
+ntp authentication-key 1 md5 NTPpa55
+(Execute command in all router)
+4->service timestamp log datetime msec
+(Execute command in all router)
+
+part 4-Configure router to log messageto the syslog
+1->logging host 192.168.1.6
+ (Execute command in all router)
+R#show logging
+(Execute in all router)
+(Go to services tab syslog servces --> check in all pc you will get in one)
+
+part5-Configure R3 to support ssh connection)
+Execute command in R3 only
+1->ip domain-name ccnasecurity.com
+2->username SSHadmin privilege 15 secret sshpa55
+3->line vty 0 4
+login local
+transport input ssh
+4->crypto key zeroize rsa
+5->crypto key generate rsa 
+(1024)
+6->R3# show ip ssh
+7->ip ssh time-out 90
+ip ssh authentication-retries 2
+ip ssh version 2
+8->R3# show ip ssh
+9->PCC---->telnet 192.168.3.1
+unsuccessful
+PCC--->ssh -l SSHadmin 192.168.3.1
+password--->sshpa55
+R2# ssh -v 2 -l SSHadmin 10.2.2.1
+password--->sshpa55
