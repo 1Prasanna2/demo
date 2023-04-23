@@ -1,0 +1,1193 @@
+Practical 1:
+part 1:(Configure Router) Execute Command in All Router
+1->line vty 0 4
+password vtypa55
+login
+2->enable secret enpa55
+For R1:
+router ospf 1
+network 192.168.1.0 0.0.0.255 area 0 
+network 10.1.1.0 0.0.0.3 area 0
+For R2:
+router ospf 1
+network 10.1.1.0 0.0.0.3 area 0
+network 10.2.2.0 0.0.0.3 area 0
+For R3:
+router ospf 1
+network 192.168.3.0 0.0.0.255 area 0
+network 10.2.2.0 0.0.0.3 area 0
+Test Connectivity:
+PC-A>ping 192.168.3.5(Successfull)
+PC-B>ping 192.168.3.5(successfull)
+
+Part2-OSPF MD5 Authentication
+Execute Command in all router
+1->router ospf 1
+area 0 authentication message-digest
+For R1:
+int se 0/1/0
+ip ospf message-digest-key 1 md5 md5pa55
+For R2:
+int se 0/1/0
+ip ospf message-digest-key 1 md5 md5pa55
+int se 0/1/1
+ip ospf message-digest-key 1 md5 md5pa55
+For R3:
+int se 0/1/0
+ip ospf message-digest-key 1 md5 md5pa55
+
+R#show ip ospf interface
+Execute Command in all router
+
+Part3-Configure NTP
+PCA---->NTp--->sevice enable
+authentication--->Click enable-->key 1----->password NTPpa55
+1->ntp server 192.168.1.5
+(Execute in all router)
+2->ntp update-calendar 
+(Execute in All Router)
+R#show clock
+(Execute command in all router)
+3->ntp authenticate
+ntp trusted-key 1
+ntp authentication-key 1 md5 NTPpa55
+(Execute command in all router)
+4->service timestamp log datetime msec
+(Execute command in all router)
+
+part 4-Configure router to log messageto the syslog
+1->logging host 192.168.1.6
+ (Execute command in all router)
+R#show logging
+(Execute in all router)
+(Go to services tab syslog servces --> check in all pc you will get in one)
+
+part5-Configure R3 to support ssh connection)
+Execute command in R3 only
+1->ip domain-name ccnasecurity.com
+2->username SSHadmin privilege 15 secret sshpa55
+3->line vty 0 4
+login local
+transport input ssh
+4->crypto key zeroize rsa
+5->crypto key generate rsa 
+(1024)
+6->R3# show ip ssh
+7->ip ssh time-out 90
+ip ssh authentication-retries 2
+ip ssh version 2
+8->R3# show ip ssh
+9->PCC---->telnet 192.168.3.1
+unsuccessful
+PCC--->ssh -l SSHadmin 192.168.3.1
+password--->sshpa55
+R2# ssh -v 2 -l SSHadmin 10.2.2.1
+password--->sshpa55
+
+Practical 2:
+Part 1:Configure Router
+For R1
+1->line vty 0 4
+password vtypa55
+login
+2->enable secret enpa55
+3->router ospf 1
+network 192.168.1.0 0.0.0.255 area 0
+4->router ospf 1
+area 0 authentication message-digest
+5->int gig0/0
+ip ospf message-digest-key 1 md5 md5pa55
+6->R1#show ip ospf interface
+PC0:-
+ping 192.168.1.1(successfull)
+PC1:-
+ping 192.168.1.1(successfull)
+
+part 2:Configure local AAA authentication for console Access on R1
+1->username admin secret adminpa55
+2->aaa new-model
+aaa authentication login default local
+3->line console 0
+login authentication default
+4->end
+exit
+username:-admin
+password:-adminpa55
+
+part 3:Configure local AAA authentication for vty lines on R1
+1->ip domain-name ccnasecurity.com
+crypto key generate rsa
+2->aaa authentication login SSH-LOGIN local
+3->line vty 0 4
+login authentication SSH-LOGIN
+transport input ssh
+end
+4->PC0:ssh -l admin 192.168.1.1
+password-adminpa55
+PC1:ssh -l admin 192.168.1.1
+password-adminpa55
+
+
+Practical 3:
+ACL Part A
+Part 1: 
+R1:
+1->line vty 0 4
+password vtypa55
+login
+exit 
+2->enable secret enpa55
+
+Part 2: configure & apply
+(FTP and ICMP)
+1->access-list 100 permit tcp 172.22.34.64 0.0.0.31 host 172.22.34.62 eq ftp
+access-list 100 permit icmp 172.22.34.64 0.0.0.31 host 172.22.34.62
+2->apply
+int gig0/0
+ip access-group 100 in
+3->verify
+pc1>ping 172.22.34.62
+(success)
+pc1>ftp 172.22.34.62
+#username & pass = cisco
+ftp>quit
+pc1>ping 172.22.34.98
+(unsuccessfull)
+
+Part 3 - extended named acl
+(HTTP and ICMP)
+1->ip access-list extended HTTP_ONLY
+permit tcp 172.22.34.96 0.0.0.15 host 172.22.34.62 eq www
+permit icmp 172.22.34.96 0.0.0.15 host 172.22.34.62
+exit
+int gig0/1
+ip access-group HTTP_ONLY in
+2->verify
+PC2>ping 172.22.34.62
+(success)
+pc2>ftp 172.22.34.62 
+(unsuccessful)
+# open browser in pc2
+URL>http://172.22.34.62
+#successful
+pc2>ping 172.22.34.66
+#unsuccessful
+
+Part B:
+Part 1:configure ,apply verify extended number acl
+1->SWA
+int vlan 1
+ip address 10.101.117.50 255.255.255.248
+no shut	
+ip default-gateway 10.101.117.49
+2->SWB
+int vlan 1
+ip address 10.101.117.34 255.255.255.240
+no shut
+ip default-gateway 10.101.117.33
+3->SWC
+int vlan 1
+ip address 10.101.117.2 255.255.255.224
+no shut
+ip default-gateway 10.101.117.1
+4->Execute in All Router and Switches
+enable secret enpa55
+line console 0
+password conpa55
+login
+5->test connection
+PCA> ping 10.101.117.35
+PCA> ping 10.101.117.2
+PCB> ping 10.101.117.2
+
+Part 2:configure ssh on All switches and routers
+1->Execute in all switch and router
+ip domain-name ccnasecurity.com
+username admin secret adminpa55
+line vty 0 4
+login local
+exit
+crypto key generate rsa
+2->verify ssh connection
+PCA> ssh -l admin 10.101.117.34
+PCA> ssh -l admin 10.101.117.2
+PCB> ssh -l admin 10.101.117.50
+PCB> ssh -l admin 10.101.117.2
+SWC> ssh -l admin 10.101.117.50
+SWC> ssh -l admin 10.101.117.34
+
+Part 3: config ,Apply extended numbered ACL
+1->Execute on Router
+access-list 199 permit tcp 10.101.117.32 0.0.0.15 10.101.117.0 0.0.0.31 eq 22
+access-list 199 permit icmp any any
+int gig0/2
+ip access-group 199 out
+2->verify ACL implementation
+PCB> ping 10.101.117.51
+PCB> ping 10.101.117.2
+PCB> ssh -l admin 10.101.117.2
+PCA> ping 10.101.117.35
+PCA> ping 10.101.117.2
+PCA> ssh -l admin 10.101.117.2
+PCA> ssh -l admin 10.101.117.34
+#after logging in SWB do not log out & execute below swb cl 
+SWB# ssh -l admin 10.101.117.2
+
+Practical 4:
+
+Part A:
+Execute on all routers
+1-> enable secret enpa55
+2-> line console 0
+password conpa55
+login
+3->
+ip domain-name ccnasecurity.com
+username admin secret adminpa55
+line vty 0 4
+login local
+crypto key generate rsa
+4-> only on R2
+int loopback 0
+ip address 192.168.2.1 255.255.255.0
+no shut 
+5-> static routing on routers
+#R1->
+ip route 192.168.3.0 255.255.255.0 10.1.1.2
+ip route 10.2.2.0 255.255.255.252 10.1.1.2
+ip route 192.168.2.0 255.255.255.0 10.1.1.2
+#R2->
+ip route 192.168.1.0 255.255.255.0 10.1.1.1
+ip route 192.168.3.0 255.255.255.0 10.2.2.1
+#R3->
+ip route 192.168.1.0 255.255.255.0 10.2.2.2
+ip route 192.168.2.0 255.255.255.0 10.2.2.2
+ip route 10.1.1.0 255.255.255.252 10.2.2.2
+6->verify
+#pca to pcc &r2->
+PCA> ping 192.168.3.3 
+PCA> ping 192.168.2.1 
+PCA> ssh –l admin 192.168.2.1
+R2>exit
+#pcc to pca &r2->
+PCC> ping 192.168.1.3 
+PCC> ping 192.168.2.1 
+PCC> ssh –l admin 192.168.2.1
+R2>exit
+->
+in PC-A open webbrowser -> 192.168.1.3 ->display webpage 
+
+part 2: secure access to routers
+1->execute on all routers
+access-list 10 permit host 192.168.3.3
+line vty 0 4
+access-class 10 in
+2-> verify exclusive management
+PCC> ssh –l admin 192.168.2.1
+Password:adminpa55
+R2>exit
+PCA> ssh –l admin 192.168.2.1
+--Connection refused by remote host
+
+part 3: create numbered IP ACL 120 on R1
+Disable HTTP and enable HTTPS on server PC-A in Services tab.
+
+1->only on R1
+ access-list 120 permit udp any host 192.168.1.3 eq domain
+access-list 120 permit tcp any host 192.168.1.3 eq smtp
+access-list 120 permit tcp any host 192.168.1.3 eq ftp
+access-list 120 deny tcp any host 192.168.1.3 eq 443
+access-list 120 permit tcp  host 192.168.3.3 host 10.1.1.1 eq 22
+int se0/1/0
+ip access-group 120 in
+
+2->
+Verify that PC-C cannot access PC-A via HTTPS using the web browser.
+PC-C:Desktop->Web Browser->192.168.1.3
+
+part 4: modify  an existing ACL on R1
+1-> PCA> ping 192.168.2.1
+unsuccesfull
+2->on R1
+access-list 120 permit icmp any any echo-reply
+access-list 120 permit icmp any any unreachable
+access-list 120 deny icmp any any 
+access-list 120 permit ip any any
+3->pca successfully ping loopback on R2
+PCA> ping 192.168.2.1
+successfull
+
+part 5: create a numbered IP ACL 110 on R3
+1->on R3
+access-list 110 permit ip 192.168.3.0 0.0.0.255 any
+int int gig0/0
+ip access-group 110 in
+access-list 100 permit tcp 10.0.0.0 0.255.255.255 host 192.168.3.3 eq 22
+access-list 100 deny ip 10.0.0.0 0.255.255.255 any
+access-list 100 deny ip 172.16.0.0 0.15.255.255 any
+access-list 100 deny ip 192.168.0.0 0.0.255.255 any
+access-list 100 deny ip 127.0.0.0 0.255.255.255 any
+access-list 100 deny ip 224.0.0.0 15.255.255.255 any
+access-list 100 permit ip any any
+int se0/1/0
+ip access-group 100 in
+2-> Confirm that the specified traffic entering interface Serial 
+is handled correctly.
+PCC> ping 192.168.1.3 
+unsuccessfull
+PCC> ssh –l admin 192.168.2.1
+R2>exit
+
+Part B:
+For HTTP and HTTPS Block and For ICMP BLOCK
+part1
+1-> on all routers
+enable secret enpa55
+
+2->assign ipv6 address
+R1--
+int gig0/0
+ipv6 address 2001:DB8:1:10::1/64
+ipv6 address FE80::1 link-local
+no shut
+exit
+int gig0/1
+ipv6 address 2001:DB8:1:11::1/64
+ipv6 address FE80::1 link-local
+no shut
+exit
+int se0/1/0
+ipv6 address 2001:DB8:1:1::1/64
+ipv6 address FE80::1 link-local
+no shut
+exit
+
+R2--
+
+int se0/1/1
+ipv6 address 2001:DB8:1:2::2/64
+ipv6 address FE80::2 link-local
+no shut
+exit
+int se0/1/0
+ipv6 address 2001:DB8:1:1::2/64
+ipv6 address FE80::2 link-local
+no shut
+exit
+
+R3--
+
+int gig0/0
+ipv6 address 2001:DB8:1:30::1/64
+ipv6 address FE80::3 link-local
+no shut
+exit
+int se0/1/1
+ipv6 address 2001:DB8:1:2::1/64
+ipv6 address FE80::3 link-local
+no shut
+exit
+
+3->ipv6 static routing
+
+R1--
+
+ipv6 unicast-routing 
+ipv6 route 2001:DB8:1:2::0/64 2001:DB8:1:1::2
+ipv6 route 2001:DB8:1:30::0/64 2001:DB8:1:1::2
+
+R2--
+
+ipv6 unicast-routing 
+ipv6 route 2001:DB8:1:10::0/64 2001:DB8:1:1::1
+ipv6 route 2001:DB8:1:11::0/64 2001:DB8:1:1::1
+ipv6 route 2001:DB8:1:30::0/64 2001:DB8:1:2::1
+
+R3-- 
+
+ipv6 unicast-routing
+ipv6 route 2001:DB8:1:10::0/64 2001:DB8:1:2::2
+ipv6 route 2001:DB8:1:11::0/64 2001:DB8:1:2::2
+ipv6 route 2001:DB8:1:1::0/64 2001:DB8:1:2::2
+
+verify--
+
+PC1> ping 2001:DB8:1:30::30
+
+PC2> ping 2001:DB8:1:30::30
+
+
+part2: Configure & verify IPv6 ACL to Block Http and Https access
+
+on R1->
+
+ipv6 access-list BLOCK_HTTP
+deny tcp any host 2001:DB8:1:30::30 eq www
+deny tcp any host 2001:DB8:1:30::30 eq 443
+permit ipv6 any any
+exit
+int gig0/1
+ipv6 traffic-filter BLOCK_HTTP in
+
+verify->
+Open a web browser to the PC1 to display the web page
+http://2001:DB8:1:30::30
+
+https://2001:DB8:1:30::30
+
+Open a web browser to the PC2 to display the web page.
+http://2001:DB8:1:30::30
+
+https://2001:DB8:1:30::30
+
+PC2> ping 2001:DB8:1:30::30
+
+part3: configure second ipv6 acl to block icmp
+
+on R3->
+1->
+ipv6 access-list BLOCK_ICMP
+deny icmp any any
+permit ipv6 any any
+exit
+int gig0/0
+ipv6 traffic-filter BLOCK_ICMP OUT
+2->
+int gig0/0
+ipv6 traffic-filter BLOCK_ICMP out
+
+
+verify-->
+
+PC2> ping 2001:DB8:1:30::30
+-- unsuccessful
+PC1> ping 2001:DB8:1:30::30
+-- unsuccessful
+
+Open a web browser to the PC1 to display the web page.
+Desktop->Web Browser->http://2001:DB8:1:30::30
+-- successful
+Desktop->Web Browser->https://2001:DB8:1:30::30
+-- successful
+
+Practical 5:
+
+Part 1: configure Router
+1->line console 0
+password conpa55
+login
+(Execute command on all routers)
+2->line vty 0 4
+password vtypa55
+login
+(Execute command on all routers)
+3->enable secret enpa55
+(Execute command on all routers)
+4->ip domain-name ccnasecurity.com
+username admin secret adminpa55
+line vty 0 4
+login local
+crypto key generate rsa
+(Execute command on all routers)
+5->For R1:
+ip route 10.2.2.0 255.255.255.252 10.1.1.2
+ip route 192.168.3.0 255.255.255.0 10.1.1.2
+For R2:
+ip route 192.168.1.0 255.255.255.0 10.1.1.1
+ip route 192.168.3.0 255.255.255.0 10.2.2.1
+For R3:
+ip route 192.168.1.0 255.255.255.0 10.2.2.2
+ip route 10.1.1.0 255.255.255.252 10.2.2.2
+6->PCA> ping 192.168.3.3
+(successfull)
+PCA> ssh -l admin 10.2.2.2
+(adminpa55)
+exit
+PCA->Desktop -> Web Browser
+URL: http://192.168.1.3
+(successfull)
+
+Part2:Create the Firewall Zones on R3
+1->R3#show version
+2->(R3#config)license boot module c1900 technology-package securityk9
+(yes)
+3->R3#:-
+copy run start
+reload
+(pass:conpa55)
+4->R3#show version
+For R3:
+5->zone security IN-ZONE
+exit
+6->zone security OUT-ZONE
+exit
+Part 3:Ientify traffic using classs map
+For R3
+1->access-list 101 permit ip 192.168.3.0 0.0.0.255 any
+2->class-map type inspect match-all IN-NET-CLASS-MAP
+match access-group 101
+exit
+Part 4:Specify Firewall Policy
+For R3
+1->policy-map type inspect IN-2-OUT-PMAP
+2->class type inspect IN-NET-CLASS-MAP
+3->R3(config-pmap-c)#inspect
+exit
+exit
+Part 5: Apply Firewall policy
+For R3:-
+1->zone-pair security IN-2-OUT-ZPAIR source IN-ZONE destination OUT-ZONE
+service-policy type inspect IN-2-OUT-PMAP
+exit
+2->int gig0/0
+zone-member security IN-ZONE
+exit
+int se0/1/1
+zone-member security OUT-ZONE
+exit
+3->R3#copy run start
+reload
+(press enter)
+4->PCC>ping 192.168.1.3
+(success)
+PCC> ssh -l admin 10.2.2.2
+(adminpa55)
+5->R3#show policy-map type inspect zone-pair sessions 
+exit
+6->PCC->web Browser->URL: http://192.168.1.3
+(success)
+7->R3#show policy-map type inspect zone-pair sessions 
+8->PCA>ping 192.168.3.3
+(unsuccess)
+From R2, ping PC-C. 
+R2# ping 192.168.3.3
+(unsuccess)
+
+Practical 6:
+
+Enable IOS IPS
+Configure logging
+verify IPS
+
+Execute command on all routers
+1->enable secret enpa55
+2->line console 0
+password conpa55
+login
+exit
+3->ip domain-name ccnasecurity.com
+username admin secret adminpa55
+line vty 0 4
+login local
+exit
+crypto key generate rsa
+4->R1
+router ospf 1
+network 10.1.1.0 0.0.0.3 area 0
+network 192.168.1.0 0.0.0.255 area 0
+
+R2
+router ospf 1
+network 10.1.1.0 0.0.0.3 area 0
+network 10.2.2.0 0.0.0.3 area 0
+
+R3
+router ospf 1
+network 10.2.2.0 0.0.0.3 area 0
+network 192.168.3.0 0.0.0.255 area 0
+
+PC-A>ping 192.168.3.2 (successful)
+pc-c>ping 192.168.1.2 (successful)
+
+Part 2:Enable IOS IPS
+1->r1#show version
+2->R1(config)#license boot module c1900 technology-package securityk9
+exit
+r1#copy run start
+r1#reload
+r1#show version
+r1#mkdir ipsdir
+conf t
+ip ips config location flash:ipsdir
+
+ip ips name iosips
+
+ip ips notify log
+
+r1#clock set 13:13:56 24 APRIL 2023
+r1(config)#service timestamps log datetime msec
+r1(config)#logging host 192.168.1.50
+
+Execute on R1(config)#
+ip ips signature-category
+category all
+retired true
+exit
+category ios_ips basic
+retired false
+exit
+exit
+
+int gig0/0
+ip ips iosips out
+
+r1#show ip ips all
+
+View the syslog messages.
+Click the Syslog server->Services tab-> SYSLOG
+
+Part 3:Moddify Signature
+Execute on R1(config)#
+ip ips signature-definition 
+signature 2004 0 
+status
+retired false 
+enabled true 
+exit
+engine 
+event-action produce-alert
+event-action deny-packet-inline 
+exit 
+exit 
+exit 
+
+r1#show ip ips all
+
+Verify that IPS is working properly
+PCC> ping 192.168.1.2 unsuccessful
+
+PCA> ping 192.168.3.2 successful
+
+View the syslog messages.
+Click the Syslog server->Services tab-> SYSLOG
+
+
+Practical 7:
+
+Execute command on all switches and router
+1->enable secret enpa55
+2->line console 0
+password conpa55
+login
+
+3->ip domain-name ccnasecurity.com
+username admin secret adminpa55
+line vty 0 4
+login local
+crypto key generate rsa
+
+4->Determine the current root bridge
+SW#show spanning-tree(Execute in all switches)
+SW1
+show spanning-tree
+
+5->Central as the primary root bridge
+central(config)#spanning-tree vlan 1 root primary
+central#show spanning-tree
+
+6->SW-1 as a secondary root bridge
+SW1(config)#spanning-tree vlan 1 root secondary
+#show spanning-tree
+
+7->Enable PortFast on all access ports 
+Execute on SWA-SWB
+int range fa0/1-4
+spanning-tree portfast
+exit
+int range fa0/1-4
+spanning-tree bpduguard enable
+8->SW1 and SW2
+#show spanning-tree
+conig#int range fa0/23-24
+spanning-tree guard root
+9->SW-A and SW-B
+int range fa0/1-22
+switchport mode access 
+switchport port-security
+switchport port-security maximum 2
+switchport port-security violation shutdown
+switchport port-security mac-address sticky
+10->SW-A and SW-B #
+show port-security interface fa0/1
+11->SW-A and SW-B
+config#int range f0/5-22
+shutdown
+
+C1> ping 10.1.1.11
+
+C1> ping 10.1.1.14
+Commands on SWA-SWB
+#show port-security int fa0/1
+
+
+Practical 8:
+
+Part 1:configure switch and Router
+1->enable secret enpa55
+line console 0
+password conpa55
+login
+exit
+ip domain-name ccnasecurity.com
+username admin secret adminpa55
+line vty 0 4
+login local
+exit
+crypto key generate rsa
+(Execute command in all router and switches)
+Part2:Create Vlan and assign access mode and trunk mode to interfaces
+1->Execute command on all switches
+Sw#show vlan brief
+2->vlan 5
+exit
+vlan 10
+exit
+vlan 15
+exit
+exit
+show vlan brief
+(Execute command on all switches)
+3->Execute command on switches 
+SWA:
+int fa0/2
+switchport mode access
+switchport access vlan 10
+exit
+int fa0/3
+switchport mode access
+switchport access vlan 10
+exit
+int fa0/4
+switchport mode access
+switchport access vlan 5
+
+SWB:
+int fa0/1
+switchport mode access
+switchport access vlan 5
+exit
+int fa0/2
+switchport mode access
+switchport access vlan 5
+exit
+int fa0/3
+switchport mode access
+switchport access vlan 5
+exit
+int fa0/4
+switchport mode access
+switchport access vlan 10
+
+Check the access mode allocations
+SWA#show vlan brief
+
+SWB#show vlan brief
+4->Assign trunk
+SWA:
+int fa0/24
+switchport mode trunk
+switchport trunk native vlan 15
+
+SWB:
+int fa0/24
+switchport mode trunk
+switchport trunk native vlan 15
+
+SW1
+int fa0/24
+switchport mode trunk
+switchport trunk native vlan 15
+
+SW1
+int gig0/1
+switchport mode trunk
+switchport trunk native vlan 15
+
+SW2
+int fa0/24
+switchport mode trunk
+switchport trunk native vlan 15
+
+SW2
+int gig0/1
+switchport mode trunk
+switchport trunk native vlan 15
+
+Central
+int range gig0/1-2
+switchport mode trunk
+switchport trunk native vlan 15
+exit
+int fa0/1
+switchport mode trunk
+switchport trunk native vlan 15
+exit
+
+Central#show int trunk
+
+SW1 and SW2
+SW#show int trunk
+
+SWA and SWB
+show int trunk
+5->create sub interface on router
+R1:
+int gig0/0.1
+encapsulation dot1q 5
+ip address 192.168.5.100 255.255.255.0
+exit
+int gig0/0.2
+encapsulation dot1q 10
+ip address 192.168.10.100 255.255.255.0
+exit
+int gig0/0.15
+encapsulation dot1q 15
+ip address 192.168.15.100 255.255.255.0
+
+Part3:verify connectivity
+C2> ping 192.168.10.2
+
+C2> ping 192.168.5.2
+
+part 4: create a link bewtween sw-1 and sw-2
+Connect SW-1 and SW-2.
+Using a crossover cable, connect port Fa0/23 on SW-1 to port Fa0/23
+on SW-2.
+(Execute command on SW- 1 and SW-2)
+int fa0/23
+switchport mode trunk
+switchport trunk native vlan 15
+switchport nonegotiate
+
+part 5:Enable vlan 20 as management vlan
+For SWA:
+1->vlan 20
+exit
+int vlan 20
+ip address 192.168.20.1 255.255.255.0
+2->(Execute command on SW-B, SW-1, SW-2, and Central)
+vlan 20
+exit
+3->SWB
+int vlan 20
+ip address 192.168.20.2 255.255.255.0
+
+SW1
+int vlan 20
+ip address 192.168.20.3 255.255.255.0
+
+SW2
+int vlan 20
+ip address 192.168.20.4 255.255.255.0
+
+Central
+int vlan 20
+ip address 192.168.20.5 255.255.255.0
+4->connect pc-1 i.e C1 with switch fa0/1 and 
+iP address(desktop->ip configuration)=192.168.20.50
+(dont put subnet mask now)
+5->SWA:
+int fa0/1
+switchport mode access
+switchport access vlan 20
+6->C1> ping 192.168.20.1 
+
+C1> ping 192.168.20.2 
+
+C1> ping 192.168.20.3 
+
+C1> ping 192.168.20.4 
+
+C1> ping 192.168.20.5 
+
+Part 6:enable management pc to access R1
+1->R1
+int gig0/0.3
+encapsulation dot1q 20
+ip address 192.168.20.100 255.255.255.0
+2->Set default gateway in C1
+C1=192.168.20.100
+
+C1> ping 192.168.20.100
+3->Enable security on R1
+access-list 101 deny ip any 192.168.20.0 0.0.0.255
+access-list 101 permit ip any any
+access-list 102 permit ip host 192.168.20.50 any
+int gig0/0.1
+ip access-group 101 in
+int gig0/0.2
+ip access-group 101 in
+line vty 0 4
+access-class 102 in
+4->verify
+C1> ssh -l admin 192.168.20.100
+SWA,SWB,R1:-(go in c1 cmd and ping)
+C1> ping 192.168.20.1 
+
+C1> ping 192.168.20.2 
+
+C1> ping 192.168.20.100 
+
+D1> ping 192.168.20.50(unsuccess)
+
+Practical 9 
+Configure and Verify a site-to-site IPSec VPN using CLI
+Part 1:-Configure Router 
+(Execute command on all routers)
+1->enable secret enpa55
+2->(Execute command on all routers)
+line console 0
+password conpa55
+login 
+3->(Execute command on all routers)
+ip domain-name ccnasecurity.com
+username admin secret adminpa55
+line vty 0 4
+login local
+crypto key generate rsa
+
+Step 4:Configure OSPF on routers
+R1:
+router ospf 1
+network 192.168.1.0 0.0.0.255 area 0
+network 10.1.1.0 0.0.0.3 area 0
+
+R2:
+router ospf 1
+network 192.168.2.0 0.0.0.255 area 0
+network 10.2.2.0 0.0.0.3 area 0
+network 10.1.1.0 0.0.0.3 area 0
+
+R3:
+router ospf 1
+network 192.168.3.0 0.0.0.255 area 0
+network 10.2.2.0 0.0.0.3 area 0
+
+Step 5:Verify connectivity
+PCA>ping 192.168.3.3
+(Successful)
+PCA>ping 192.168.2.3
+(Successful)
+PCB>ping 192.168.3.3
+(Successful)
+
+Part 2:-Configure IPSec parameters on R1
+1->R1#show version
+2->R1(config)#license boot module c1900 technology-package securityk9
+(yes)
+3->R1#copy run start
+reload
+4->R1#show version
+5->access-list 110 permit ip 192.168.1.0 0.0.0.255 192.168.3.0 0.0.0.255
+6->crypto isakmp policy 10
+encryption aes 256
+authentication pre-share
+group 5
+exit
+crypto isakmp key vpnpa55 address 10.2.2.2
+7->crypto ipsec transform-set VPN-SET esp-aes esp-sha-hmac
+crypto map VPN-MAP 10 ipsec-isakmp
+description VPN connection to R3
+set peer 10.2.2.2
+set transform-set VPN-SET
+match address 110
+exit
+8->int se0/1/0
+crypto map VPN-MAP
+
+PART 3: Configure IPsec Parameters on R3
+1->R3# show version
+2->R3(config)# license boot module c1900 technology-package securityk9
+3->R3#copy run start
+reload
+4->R3#show version 
+5->R3(config)#access-list 110 permit ip 192.168.3.0 0.0.0.255 192.168.1.0 0.0.0.255
+6->R3(config)#crypto isakmp policy 10
+encryption aes 256 
+authentication pre-share 
+group 5 
+exit 
+crypto isakmp key vpnpa55 address 10.1.1.2
+7->R3(config)#crypto ipsec transform-set VPN-SET esp-aes esp-sha-hmac
+crypto map VPN-MAP 10 ipsec-isakmp
+description VPN connection to R1
+set peer 10.1.1.2 
+set transform-set VPN-SET
+match address 110 
+exit
+8->R3(config)#int se0/1/0
+crypto map VPN-MAP
+
+PART 4: Verify IPSec VPN
+1->R1#show crypto ipsec sa
+2->PCC> ping 192.168.1.3
+(Successful)
+3->R1#show crypto ipsec sa
+4->PCB>ping 192.168.1.3
+R1#ping 192.168.3.3
+R3#ping 192.168.1.3
+Verify the tunnel.
+R1# show crypto ipsec sa
+
+
+Practical 10: 
+Configuring ASA Basic Settings and Firewall
+
+Part 1:Configure Router 
+1->(Execute command on all routers)
+enable secret enpa55
+2->(Execute command on all routers) 
+line console 0
+password conpa55
+login
+exit
+3->(Execute command on all routers) 
+ip domain-name ccnasecurity.com
+username admin secret pa55
+line vty 0 4
+login local
+exit
+crypto key generate rsa 
+4->
+R1
+router ospf 1
+network 209.165.200.0 0.0.0.7 area 0
+network 10.1.1.0 0.0.0.3 area 0  
+
+R2
+router ospf 1
+network 10.1.1.0 0.0.0.3 area 0
+network 10.2.2.0 0.0.0.3 area 0
+
+R3
+router ospf 1
+network 172.16.3.0 0.0.0.255 area 0
+network 10.2.2.0 0.0.0.3 area 0
+5->Verify connectivity.
+Send packets from :
+PCC -> R1, R2, R3
+(Successful)
+Send packets from: 
+PCC -> ASA, PC-B, DMZ server
+(Unsuccessful)
+
+Part 2:Explore the ASA
+Press enter for password
+ASA#en
+1->ASA#show version
+ASA#show file system
+ASA#show flash
+
+Part 3:Configure ASA Settings and Interface Security
+1->ASA(config)#hostname CCNAS-ASA
+domain-name ccnasecurity.com
+enable password enpa55
+clock set (set time in hr:min:sec date month year)
+month=may not 03
+
+CCNA-ASA(config)#int vlan 1
+nameif inside
+ip address 192.168.1.1 255.255.255.0 
+security-level 100
+exit
+int vlan 2
+nameif outside
+ip address 209.165.200.226 255.255.255.248
+security-level 0
+exit
+2->ASA#show int ip brief
+3->ASA#show ip address
+show switch vlan
+4->Test connectivity to the ASA.
+PCB -> ASA
+Successful 
+PCB -> R1
+Unsuccessful
+
+Part 4:Configure Routing,Address Translation and Inspection Policy
+1->ASA#show route
+conf t
+route outside 0.0.0.0 0.0.0.0 209.165.200.225
+exit
+show route
+2->Test connectivity.
+ASA -> R1
+Successful 
+3->conf t
+object network inside-net
+subnet 192.168.1.0 255.255.255.0
+nat (inside,outside) dynamic interface
+end
+4->ASA#show run
+PCB -> R1 
+Unsuccessful
+ASA#show nat
+
+Step 5: Modify the default MPF application inspection global service policy
+conf t
+class-map inspection_default
+match default-inspection-traffic
+exit
+policy-map global_policy
+class inspection_default
+inspect icmp
+exit
+service-policy global_policy global
+
+Step 6:
+PCB -> R1 
+Successful
+
+Part 5:Configure DHCP,AAA and SSH
+Step 1:
+ASA(config)#dhcpd address 192.168.1.5-192.168.1.36 inside
+dhcpd dns 209.165.201.2 interface inside
+dhcpd enable inside
+Step 2:
+ASA(config)#username admin password adminpa55
+aaa authentication ssh console LOCAL
+ASA(config)#crypto key generate rsa modulus 1024 
+:no
+ASA(config)#ssh 192.168.1.0 255.255.255.0 inside
+ssh 172.16.3.3 255.255.255.255 outside
+ssh timeout 10
+
+PCC> ssh -l admin 209.165.200.226
+
+PCB> ssh -l admin 192.168.1.1
+
+Part 6:Configure a DMZ, Static NAT, and ACLs
+Step 1:ASA(config)#
+int vlan 3
+ip address 192.168.2.1 255.255.255.0 
+no forward interface vlan 1  
+nameif dmz
+security-level 70
+int et0/2
+switchport access vlan 3
+exit
+exit
+Step 2:
+#show int ip brief
+#show ip address
+#show switch vlan
+
+Step 3:
+ASA(config)#object network dmz-server
+host 192.168.2.3 
+nat (dmz,outside) static 209.165.200.227 
+exit
+Step 4:config#
+access-list OUTSIDE-DMZ permit icmp any host 192.168.2.3
+access-list OUTSIDE-DMZ permit tcp any host 192.168.2.3 eq 80
+access-group OUTSIDE-DMZ in interface outside
+Step 5:
+Test access to the DMZ server.
+The ability to successfully test outside access to the DMZ web server was not
+in place; therefore, successful testing is not required
+
+
+
+
+
+
