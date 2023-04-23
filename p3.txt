@@ -1,0 +1,104 @@
+Practical 3:
+ACL Part A
+Part 1: 
+R1:
+1->line vty 0 4
+password vtypa55
+login
+exit 
+2->enable secret enpa55
+
+Part 2: configure & apply
+(FTP and ICMP)
+1->access-list 100 permit tcp 172.22.34.64 0.0.0.31 host 172.22.34.62 eq ftp
+access-list 100 permit icmp 172.22.34.64 0.0.0.31 host 172.22.34.62
+2->apply
+int gig0/0
+ip access-group 100 in
+3->verify
+pc1>ping 172.22.34.62
+(success)
+pc1>ftp 172.22.34.62
+#username & pass = cisco
+ftp>quit
+pc1>ping 172.22.34.98
+(unsuccessfull)
+
+Part 3 - extended named acl
+(HTTP and ICMP)
+1->ip access-list extended HTTP_ONLY
+permit tcp 172.22.34.96 0.0.0.15 host 172.22.34.62 eq www
+permit icmp 172.22.34.96 0.0.0.15 host 172.22.34.62
+exit
+int gig0/1
+ip access-group HTTP_ONLY in
+2->verify
+PC2>ping 172.22.34.62
+(success)
+pc2>ftp 172.22.34.62 
+(unsuccessful)
+# open browser in pc2
+URL>http://172.22.34.62
+#successful
+pc2>ping 172.22.34.66
+#unsuccessful
+
+Part B:
+Part 1:configure ,apply verify extended number acl
+1->SWA
+int vlan 1
+ip address 10.101.117.50 255.255.255.248
+no shut	
+ip default-gateway 10.101.117.49
+2->SWB
+int vlan 1
+ip address 10.101.117.34 255.255.255.240
+no shut
+ip default-gateway 10.101.117.33
+3->SWC
+int vlan 1
+ip address 10.101.117.2 255.255.255.224
+no shut
+ip default-gateway 10.101.117.1
+4->Execute in All Router and Switches
+enable secret enpa55
+line console 0
+password conpa55
+login
+5->test connection
+PCA> ping 10.101.117.35
+PCA> ping 10.101.117.2
+PCB> ping 10.101.117.2
+
+Part 2:configure ssh on All switches and routers
+1->Execute in all switch and router
+ip domain-name ccnasecurity.com
+username admin secret adminpa55
+line vty 0 4
+login local
+exit
+crypto key generate rsa
+2->verify ssh connection
+PCA> ssh -l admin 10.101.117.34
+PCA> ssh -l admin 10.101.117.2
+PCB> ssh -l admin 10.101.117.50
+PCB> ssh -l admin 10.101.117.2
+SWC> ssh -l admin 10.101.117.50
+SWC> ssh -l admin 10.101.117.34
+
+Part 3: config ,Apply extended numbered ACL
+1->Execute on Router
+access-list 199 permit tcp 10.101.117.32 0.0.0.15 10.101.117.0 0.0.0.31 eq 22
+access-list 199 permit icmp any any
+int gig0/2
+ip access-group 199 out
+2->verify ACL implementation
+PCB> ping 10.101.117.51
+PCB> ping 10.101.117.2
+PCB> ssh -l admin 10.101.117.2
+PCA> ping 10.101.117.35
+PCA> ping 10.101.117.2
+PCA> ssh -l admin 10.101.117.2
+PCA> ssh -l admin 10.101.117.34
+#after logging in SWB do not log out & execute below swb cl 
+SWB# ssh -l admin 10.101.117.2
